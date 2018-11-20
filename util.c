@@ -11,9 +11,9 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include <server.h>
-#include <simple_http.h>
-#include <content.h>
+#include "server.h"
+#include "simple_http.h"
+#include "content.h"
 
 /* 
  * newfd_create_req and respond_and_free_req functions are there to
@@ -68,7 +68,7 @@ newfd_create_req(int new_fd)
  * descriptor.  This function will do that, and when it is done, it
  * will free the request structure, and all memory associated with it.
  */
-void 
+void
 respond_and_free_req(struct http_req *r, char *response, int len)
 {
 	int amnt_written = 0;
@@ -84,26 +84,26 @@ respond_and_free_req(struct http_req *r, char *response, int len)
 	 * reply with.  Write them out to the client!
 	 */
 	while (amnt_written != r->resp_hd_len) {
-		int ret = write(r->fd, r->resp_head + amnt_written, 
-				r->resp_hd_len - amnt_written);
+		int ret = write(r->fd, r->resp_head + amnt_written,
+						r->resp_hd_len - amnt_written);
 		if (ret < 0) {
 			printf("Could not write the response to the fd\n");
 			goto done;
 		}
 		amnt_written += ret;
 	}
-	
+
 	amnt_written = 0;
 	while (amnt_written != r->resp_len) {
-		int ret = write(r->fd, r->response + amnt_written, 
-				r->resp_len - amnt_written);
+		int ret = write(r->fd, r->response + amnt_written,
+						r->resp_len - amnt_written);
 		if (ret < 0) {
 			printf("Could not write the response to the fd\n");
 			goto done;
 		}
 		amnt_written += ret;
 	}
-done:
+	done:
 	shttp_free_req(r);
 	return;
 }

@@ -1,4 +1,4 @@
-OBJS=server.o simple_http.o content.o main.o util.o thread_per_request.o threadlist.o threadpool.o thread_pool_request.o
+OBJS=server.o simple_http.o content.o main.o util.o ringbuffer.o int_ring.o
 CFLAGS=-g -I. -Wall -Wextra -pthread
 #DEFINES=-DTHINK_TIME
 BIN=server
@@ -25,5 +25,5 @@ test1:
 
 test2:
 	./server 8080 2 &
-	httperf --port=8080 --server=localhost --num-conns=1000 --burst-len=100
+	httperf --port=8080 --server=localhost --num-conns=10000 --burst-len=100 --uri=index.html
 	killall server
