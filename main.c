@@ -34,8 +34,14 @@
 #include <util.h> 		/* client_process */
 #include <server.h>		/* server_accept and server_create */
 
-#define MAX_DATA_SZ 1024
-#define MAX_CONCURRENCY 4
+#include <thread_per_request.h>
+#include <thread_pool_request.h>
+
+#include <cas.h>
+
+#define MAX_DATA_SZ 1024000
+#define MAX_CONCURRENCY 4000
+#define BUFFER_LENGTH 256000
 
 /* 
  * This is the function for handling a _single_ request.  Understand
@@ -67,35 +73,38 @@ server_single_request(int accept_fd)
 }
 
 /* 
- * This implementation uses a single master thread which then spawns a
- * new thread to handle each incoming requst.  Each of these worker
- * threads should process a single request and then terminate.
+ * The following implementation creates a new thread per client
+ * request using the pthread API, and that thread is removed/killed
+ * when the request is completed.
  */
 void
-server_simple_thread(int accept_fd)
+server_thread_per_req(int accept_fd)
 {
+	process_threads_per_request(MAX_CONCURRENCY, accept_fd);
 	return;
 }
 
-
 /* 
- * The following implementation uses a thread pool.  This collection
+ * The following implementations use a thread pool.  This collection
  * of threads is of maximum size MAX_CONCURRENCY, and is created by
  * pthread_create.  These threads retrieve data from a shared
  * data-structure with the main thread.  The synchronization around
- * this shared data-structure is done using mutexes + condition
- * variables (for a bounded structure).
+ * this shared data-structure is either done using mutexes + condition
+ * variables (for a bounded structure), or compare and swap (__cas in
+ * cas.h) to do lock-free synchronization on a stack or ring buffer.
  */
 
 void
 server_thread_pool_bounded(int accept_fd)
 {
+	process_request_thread_pool(BUFFER_LENGTH, accept_fd);
 	return;
 }
 
+
 typedef enum {
 	SERVER_TYPE_ONE = 0,
-	SERVER_TYPE_SIMPLE_THREAD,
+	SERVER_TYPE_THREAD_PER_REQUEST,
 	SERVER_TYPE_THREAD_POOL_BOUND,
 } server_type_t;
 
@@ -108,32 +117,31 @@ main(int argc, char *argv[])
 
 	if (argc != 3) {
 		printf("Proper usage of http server is:\n%s <port> <#>\n"
-		       "port is the port to serve on, # is either\n"
-		       "0: server only a single request\n"
-		       "1: use a master thread that spawns new threads for "
-		       "each request\n"
-		       "2: use a thread pool and a _bounded_ buffer with "
-		       "mutexes + condition variables\n",
-		       argv[0]);
+			   "port is the port to serve on, # is either\n"
+			   "0: serve only a single request\n"
+			   "1: serve each request with a new thread\n"
+			   "2: use a thread pool and a _bounded_ buffer with "
+			   "mutexes + condition variables\n",
+			   argv[0]);
 		return -1;
 	}
 
 	port = atoi(argv[1]);
 	accept_fd = server_create(port);
 	if (accept_fd < 0) return -1;
-	
+
 	server_type = atoi(argv[2]);
 
 	switch(server_type) {
-	case SERVER_TYPE_ONE:
-		server_single_request(accept_fd);
-		break;
-	case SERVER_TYPE_THREAD_POOL_BOUND:
-		server_thread_pool_bounded(accept_fd);
-		break;
-	case SERVER_TYPE_SIMPLE_THREAD:
-		server_simple_thread(accept_fd);
-		break;
+		case SERVER_TYPE_ONE:
+			server_single_request(accept_fd);
+			break;
+		case SERVER_TYPE_THREAD_PER_REQUEST:
+			server_thread_per_req(accept_fd);
+			break;
+		case SERVER_TYPE_THREAD_POOL_BOUND:
+			server_thread_pool_bounded(accept_fd);
+			break;
 	}
 	close(accept_fd);
 
