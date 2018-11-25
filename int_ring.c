@@ -28,7 +28,7 @@ void irWrite(Int_ring *ir, int *elem) {
     ir->elems[ir->end] = *elem;
     ir->end = (ir->end + 1) % ir->size;
     if (ir->end == ir->start)
-        ir->start = (ir->start + 1) % ir->size; /* full, overwrite */
+        ir->start = (ir->start + 1) % ir->size; /* full, overwrite */    
 }
 
 int numOfItems(Int_ring *ir){

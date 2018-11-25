@@ -19,10 +19,10 @@
 //#include <malloc.h>
 #include <unistd.h>
 
-/*
+/* 
  * Create the file descriptor to accept on.  Return -1 otherwise.
  */
-int
+int 
 server_create(short int port)
 {
 	int fd;
@@ -45,11 +45,11 @@ server_create(short int port)
 	return fd;
 }
 
-/*
+/* 
  * Pass in the accept file descriptor returned from
  * server_create. Return a new file descriptor or -1 on error.
  */
-int
+int 
 server_accept(int fd)
 {
 	struct sockaddr_in sai;
@@ -63,4 +63,3 @@ server_accept(int fd)
 	}
 	return new_fd;
 }
-

@@ -32,7 +32,7 @@ void rbWrite(RingBuffer *rb, pthread_t *elem) {
     rb->end = (rb->end + 1) % rb->size;
     if (rb->end == rb->start)
         rb->start = (rb->start + 1) % rb->size; /* full, overwrite */
-
+    
 }
 
 /* Read oldest element. */
@@ -40,4 +40,3 @@ void rbRead(RingBuffer *rb, pthread_t *elem) {
     *elem = rb->elems[rb->start];
     rb->start = (rb->start + 1) % rb->size;
 }
-

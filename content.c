@@ -22,14 +22,14 @@
 char *
 error_resp(char *path, int *len)
 {
-    const char eresponse[] = "<html><head><title>X-P</title></head><body><font face=\"sans-serif\"><center><h1>X-P</h1><p>Could not find content at <b>%s</b>.</p></font></center></body>";
-    char *resp;
-    int sz = strlen(eresponse) + strlen(path);
-
-    resp = malloc(sz);
-    if (!resp) return NULL;
-    *len = sprintf(resp, eresponse, path);
-    return resp;
+	const char eresponse[] = "<html><head><title>X-P</title></head><body><font face=\"sans-serif\"><center><h1>X-P</h1><p>Could not find content at <b>%s</b>.</p></font></center></body>";
+	char *resp;
+	int sz = strlen(eresponse) + strlen(path);
+	
+	resp = malloc(sz);
+	if (!resp) return NULL;
+	*len = sprintf(resp, eresponse, path);
+	return resp;
 }
 
 int
@@ -39,39 +39,39 @@ sanity_check(char *path)
 char *
 content_get(char *path, int *content_len)
 {
-    char *resp;
-    int content_fd, amnt_read = 0;
-    struct stat s;
+	char *resp;
+	int content_fd, amnt_read = 0;
+	struct stat s;
 
 #ifdef THINK_TIME
-    sleep(1);
+	sleep(1);
 #endif
 
-    /* Bad path?  No file?  Too large? */
-    if (sanity_check(path) ||
-        stat(path, &s)     ||
-        s.st_size > MAX_CONTENT_SZ) goto err;
+	/* Bad path?  No file?  Too large? */
+	if (sanity_check(path) || 
+	    stat(path, &s)     ||
+	    s.st_size > MAX_CONTENT_SZ) goto err;
 
-    content_fd = open(path, O_RDONLY);
-    if (content_fd < 0) goto err;
+	content_fd = open(path, O_RDONLY);
+	if (content_fd < 0) goto err;
 
-    resp = malloc(s.st_size);
-    if (!resp) goto err_close;
+	resp = malloc(s.st_size);
+	if (!resp) goto err_close;
 
-    while (amnt_read < s.st_size) {
-        int ret = read(content_fd, resp + amnt_read,
-                       s.st_size - amnt_read);
+	while (amnt_read < s.st_size) {
+		int ret = read(content_fd, resp + amnt_read, 
+			       s.st_size - amnt_read);
 
-        if (ret < 0) goto err_free;
-        amnt_read += ret;
-    }
-    *content_len = s.st_size;
+		if (ret < 0) goto err_free;
+		amnt_read += ret;
+	}
+	*content_len = s.st_size;
 
-    return resp;
-    err_free:
-    free(resp);
-    err_close:
-    close(content_fd);
-    err:
-    return error_resp(path, content_len);
+	return resp;
+err_free:
+	free(resp);
+err_close:
+	close(content_fd);
+err:
+	return error_resp(path, content_len);
 }
